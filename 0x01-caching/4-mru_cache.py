@@ -22,7 +22,6 @@ class MRUCache(BaseCaching):
             initial_vacancy_checked = self.cache_data[key]
         except KeyError:
             initial_vacancy_checked = None
-        self.last_in = key
         self.cache_data[key] = item
         self.cache_data_ages[key] = datetime.datetime.now()
         cache_ages = {}
@@ -31,14 +30,19 @@ class MRUCache(BaseCaching):
         if len(self.cache_data) > self. \
                 MAX_ITEMS and initial_vacancy_checked is None:
             for k, v in self.cache_data_ages.items():
-                # create a separate dictionary for iteration.
-                cache_ages[k] = v
-            ages_list = [age for age in self.cache_data_ages.values()]
+                # create a separate dictionary for iteration
+                # this separate dict will never have the newly put
+                # in key's age because we don't want to remove new inputs
+                # upon input.
+                if k != key:
+                    cache_ages[k] = v
+            ages_list = [age for age in cache_ages.values()]
             most_recent_age = ages_list[0]
 
             # set least_recent_age
             for i in ages_list:
-                # if the datetime obj is newer than i, most_recent_age is re-set
+                # if the datetime obj is newer than i,
+                # most_recent_age is re-set
                 if most_recent_age < i:
                     most_recent_age = i
 
@@ -46,22 +50,31 @@ class MRUCache(BaseCaching):
             for k, v in cache_ages.items():
                 if v == most_recent_age:
                     most_recent_used = k
+
+                    # remove the most recently used
                     # remove the age k, v pair to update it
                     del self.cache_data_ages[most_recent_used]
 
                     print("Discard: {}".format(most_recent_used))
 
-                    # remove the most recently used
                     del self.cache_data[most_recent_used]
         # if key was simply replaced
         if len(self.cache_data) > self. \
                 MAX_ITEMS and initial_vacancy_checked is not None:
-            ages_list = [age for age in self.cache_data_ages.values()]
+            for k, v in self.cache_data_ages.items():
+                # create a separate dictionary for iteration
+                # this separate dict will never have the newly put
+                # in key's age because we don't want to remove new inputs
+                # upon input.
+                if k != key:
+                    cache_ages[k] = v
+            ages_list = [age for age in cache_ages.values()]
             most_recent_age = ages_list[0]
 
             # set least_recent_age
             for i in ages_list:
-                # if the datetime obj is older than i, least_recent_age is re-set
+                # if the datetime obj is newer than i,
+                # most_recent_age is re-set
                 if most_recent_age < i:
                     most_recent_age = i
 
@@ -69,10 +82,11 @@ class MRUCache(BaseCaching):
             for k, v in cache_ages.items():
                 if v == most_recent_age:
                     most_recent_used = k
+
+                    # remove the most recently used
                     # remove the age k, v pair to update it
                     del self.cache_data_ages[most_recent_used]
-
-                    # remove the least recently used
+                    # remove most recently used
                     del self.cache_data[most_recent_used]
 
     def get(self, key):
