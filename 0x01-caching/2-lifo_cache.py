@@ -26,7 +26,7 @@ class LIFOCache(BaseCaching):
             # input where length of cached_data == max_items
             # store last in
             self.last_in = key
-        # if cache data has more than max items,
+        # if cache data has more than max items --
         # implementation of last in last out if new key was added
         if len(self.cache_data) > self.\
                 MAX_ITEMS and initial_vacancy_checked is None:
