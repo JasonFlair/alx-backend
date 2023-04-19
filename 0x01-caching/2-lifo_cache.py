@@ -4,11 +4,12 @@ from base_caching import BaseCaching
 
 
 class LIFOCache(BaseCaching):
-    """Basic Cache class"""
+    """LIFO Cache class"""
 
     def __init__(self):
         """initialiser"""
         super().__init__()
+        self.last_in = None
 
     def put(self, key, item):
         """sets keys to item
