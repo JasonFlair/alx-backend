@@ -35,17 +35,31 @@ def before_request() -> None:
   logged_user = get_user()
   if logged_user:
     g.user = logged_user
-  else:
-    g.user = None
+
 
 def get_locale()-> str:
   """get locale function"""
-  preferred_lang = request.args.get('locale')
+  
+  # if preferred language is in the request
   # get the argument passed in locale
+  preferred_lang = request.args.get('locale')
   if preferred_lang and preferred_lang in app.config["LANGUAGES"]:
-    return preferred_lang  # return that preferred language. 
-  # preffered language will be passed to the locale_selector.
+    return preferred_lang  # return that preferred language.
+  
+  # if it is not in request url,
+  # get it from user data
+  user = get_user()
+  if user:
+        preferred_lang = user.get('locale')
+        if preferred_lang in app.config["LANGUAGES"]:
+            return preferred_lang
+  # try getting it from request header
+  if request.headers.get("locale"):
+    preferred_lang = request.headers.get("locale")
+    if preferred_lang in app.config["LANGUAGES"]:
+      return preferred_lang
   else:
+    # return default
     return request.accept_languages.best_match(app.config['LANGUAGES'])
 
 babel = Babel(app, locale_selector=get_locale)
@@ -60,7 +74,7 @@ def index()-> str:
     else:
       username = None
 
-    return render_template("5-index.html", username=username)
+    return render_template("6-index.html", username=username)
 
 if __name__ == "__main__":
     app.run(port="5000", host="0.0.0.0", debug=True)

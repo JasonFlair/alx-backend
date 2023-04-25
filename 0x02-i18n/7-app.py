@@ -4,6 +4,7 @@ from typing import Dict
 from flask import Flask, render_template, request, g
 import flask
 from flask_babel import Babel, _
+import pytz
 
 users = {
     1: {"name": "Balou", "locale": "fr", "timezone": "Europe/Paris"},
@@ -35,20 +36,59 @@ def before_request() -> None:
   logged_user = get_user()
   if logged_user:
     g.user = logged_user
-  else:
-    g.user = None
+
 
 def get_locale()-> str:
   """get locale function"""
+  
+  # if preferred language is in the request
+  # get the argument passed as locale
   preferred_lang = request.args.get('locale')
-  # get the argument passed in locale
   if preferred_lang and preferred_lang in app.config["LANGUAGES"]:
-    return preferred_lang  # return that preferred language. 
-  # preffered language will be passed to the locale_selector.
+    return preferred_lang  # return that preferred language.
+  
+  # if it is not a url parameter,
+  # get it from user data
+  user = get_user()
+  if user:
+        preferred_lang = user.get('locale')
+        if preferred_lang in app.config["LANGUAGES"]:
+            return preferred_lang
+  # try getting it from request header
+  if request.headers.get("locale"):
+    preferred_lang = request.headers.get("locale")
+    if preferred_lang in app.config["LANGUAGES"]:
+      return preferred_lang
   else:
+    # return default
     return request.accept_languages.best_match(app.config['LANGUAGES'])
-
-babel = Babel(app, locale_selector=get_locale)
+  
+def get_timezone() -> str:
+  """gets the timezone"""
+  # if timezone is in the request
+  # get the argument passed as timezone
+  time_zone = request.args.get("timezone")
+  if time_zone:
+    try:
+      return pytz.timezone(time_zone).zone
+    except pytz.exceptions.UnknownTimeZoneError:
+      pass
+  
+  # if it is not a url parameter,
+  # get it from user data
+  user = get_user()
+  if user:
+        time_zone = user.get("timezone")
+        if time_zone:
+          try:
+            return pytz.timezone(time_zone).zone
+          except pytz.exceptions.UnknownTimeZoneError:
+            pass
+          
+  # Default
+  return Config.BABEL_DEFAULT_TIMEZONE
+  
+babel = Babel(app, locale_selector=get_locale, timezone_selector=get_timezone)
 
 
 @app.route("/")
@@ -60,7 +100,7 @@ def index()-> str:
     else:
       username = None
 
-    return render_template("5-index.html", username=username)
+    return render_template("6-index.html", username=username)
 
 if __name__ == "__main__":
     app.run(port="5000", host="0.0.0.0", debug=True)
